@@ -95,12 +95,65 @@ go test ./...
 
 ---
 
+## 部署
+
+同一份代码支持两种部署方式，前端完全相同，无需改动。
+
+### 方式一：Go 单二进制（自托管）
+
+```bash
+go build -o docsite ./cmd/server
+./docsite -addr :8080
+```
+
+静态资源、文档、配置全部编译进二进制，无外部依赖。
+
+### 方式二：GitHub Pages（纯静态）
+
+线上地址：<https://yuxiansen-lab.github.io/docsite/>
+
+`cmd/build` 会把站点导出为纯静态目录：
+
+```bash
+go run ./cmd/build -out dist
+```
+
+产物结构：
+
+```
+dist/
+├── index.html            前端入口（资源引用均为相对路径）
+├── css/  js/  assets/
+├── api/config.json       站点配置
+├── api/menu.json         菜单树
+├── api/docs.json         全部文档（HTML + TOC + 上下篇）
+├── api/search-index.json 客户端搜索索引
+├── docs/assets/          文档内图片
+└── .nojekyll             阻止 Pages 的 Jekyll 处理
+```
+
+推送到 `main` 后，`.github/workflows/pages.yml` 会自动跑测试、导出并发布，
+无需手动操作。
+
+**为什么能跑在 Pages 上**：Pages 只提供静态文件，没有 Go 运行时。因此
+Markdown 渲染、TOC 抽取、上下篇计算、搜索索引全部在**构建期**完成并输出为
+JSON；前端改成读取这些 JSON（`web/js/api.js`），搜索也移到浏览器端。
+服务端同时提供同名 JSON 路由，所以两种模式的 URL 与行为一致。
+
+> **子路径注意事项**：项目站点部署在 `/docsite/` 子路径下，因此所有资源引用
+> 都使用**相对路径**；文档内 `/docs/assets/...` 形式的图片地址会在渲染时
+> 自动改写为相对路径（见 `siteRelative`），否则会指向域名根而 404。
+
+---
+
 ## 目录结构
 
 ```
 docsite/
 ├── embed.go                  # 根级 embed：config/ docs/ web/
-├── cmd/server/main.go        # 入口，解析 -addr
+├── cmd/
+│   ├── server/main.go        # 服务器入口，解析 -addr
+│   └── build/main.go         # 静态导出：生成 dist/ 供 GitHub Pages 使用
 ├── internal/
 │   ├── handler/handler.go    # 路由、静态资源、安全响应头
 │   ├── service/
@@ -116,10 +169,11 @@ docsite/
 │   ├── api.md
 │   ├── guide/
 │   └── assets/               # 文档内图片/附件
-└── web/                      # 前端（嵌入二进制）
-    ├── index.html
-    ├── css/                  # reset / variables / theme / layout / sidebar / content
-    └── js/                   # main / router / sidebar / markdown / theme / search
+├── web/                      # 前端（嵌入二进制 / 导出为静态文件）
+│   ├── index.html
+│   ├── css/                  # reset / variables / theme / layout / sidebar / content
+│   └── js/                   # api / main / router / sidebar / markdown / theme / search
+└── .github/workflows/pages.yml  # 自动导出并发布到 GitHub Pages
 ```
 
 > `embed` 指令必须放在**模块根目录**（`embed.go`），因为 `//go:embed` 的路径
@@ -207,8 +261,15 @@ window.showShortcuts = () => alert("快捷键：/ 搜索");
 | GET | `/api/menu` | 菜单树 |
 | GET | `/api/doc?path=guide/intro.md` | 渲染后的文档（HTML + TOC + 上下篇） |
 | GET | `/api/search?q=关键词` | 全文搜索，返回前 20 条 |
+| GET | `/api/config.json` | 同 `/api/config`，供静态模式使用 |
+| GET | `/api/menu.json` | 同 `/api/menu` |
+| GET | `/api/docs.json` | 全部文档（一次性载入） |
+| GET | `/api/search-index.json` | 客户端搜索索引 |
 | GET | `/docs/assets/*` | 文档内静态资源 |
 | GET | `/*` | 前端静态文件，无扩展名路径回退到 `index.html` |
+
+`/api/*.json` 这组路径在**服务端与静态导出中完全一致**，所以同一份前端
+既能跑在 Go 单二进制上，也能跑在纯静态托管上。
 
 `/api/doc` 响应：
 
@@ -256,6 +317,8 @@ window.showShortcuts = () => alert("快捷键：/ 搜索");
 
 - `go build ./cmd/server` 通过
 - `go vet ./...` 无告警
-- `go test ./...`：13 个用例全部通过（标题唯一锚点、代码块转义、行内代码不被格式化、
-  表格、任务列表、路径穿越不变量、配置与文档加载、404）
+- `go test ./...`：17 个用例全部通过（标题唯一锚点、代码块转义、行内代码不被格式化、
+  表格、任务列表、路径穿越不变量、静态资源相对路径、AllDocs/SearchIndex 聚合、404）
 - HTTP 端到端：18 项检查全部通过（各 API、静态资源、SPA 回退、遍历防护、404/400）
+- 静态导出：以 `/docsite/` 子路径模拟 GitHub Pages 实测通过 ——
+  菜单渲染 9 项、文档切换、CSS 生效、图片在子路径下成功加载、客户端搜索 5 条命中、主题切换

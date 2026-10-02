@@ -446,7 +446,7 @@ func inline(s string) string {
 	// 3) 图片（必须在链接之前，否则会被链接规则抢先匹配）
 	s = reImg.ReplaceAllStringFunc(s, func(m string) string {
 		parts := reImg.FindStringSubmatch(m)
-		alt, src, title := parts[1], parts[2], parts[3]
+		alt, src, title := parts[1], siteRelative(parts[2]), parts[3]
 		t := ""
 		if title != "" {
 			t = fmt.Sprintf(` title=%q`, title)
@@ -457,7 +457,7 @@ func inline(s string) string {
 	// 4) 链接
 	s = reLink.ReplaceAllStringFunc(s, func(m string) string {
 		parts := reLink.FindStringSubmatch(m)
-		label, href, title := parts[1], parts[2], parts[3]
+		label, href, title := parts[1], siteRelative(parts[2]), parts[3]
 		t := ""
 		if title != "" {
 			t = fmt.Sprintf(` title=%q`, title)
@@ -504,6 +504,18 @@ func inline(s string) string {
 	})
 
 	return s
+}
+
+// siteRelative 把站点内绝对路径改写为相对路径。
+//
+// 文档里的图片通常写成 ![x](/docs/assets/a.svg)。若部署在 GitHub Pages
+// 子路径（https://user.github.io/repo/）下，以 / 开头会指向域名根而 404。
+// 改为相对路径后，两种部署方式都能正确解析。
+func siteRelative(u string) string {
+	if strings.HasPrefix(u, "/docs/assets/") {
+		return strings.TrimPrefix(u, "/")
+	}
+	return u
 }
 
 func htmlEscape(s string) string {

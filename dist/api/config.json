@@ -1,0 +1,7 @@
+{
+  "title": "DocSite",
+  "description": "极简现代文档展示系统",
+  "themeColor": "#6366f1",
+  "defaultDoc": "index.md",
+  "logoText": "DS"
+}

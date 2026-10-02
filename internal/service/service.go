@@ -300,6 +300,38 @@ func (s *Service) Search(q string) []model.SearchHit {
 	return hits
 }
 
+// AllDocs 按菜单阅读顺序返回全部文档（含 prev/next）。
+// 服务端的 /api/docs.json 与静态导出共用此方法。
+func (s *Service) AllDocs() []model.DocResponse {
+	out := make([]model.DocResponse, 0, 16)
+	for _, item := range s.docOrder() {
+		d, err := s.Doc(item.Path)
+		if err != nil {
+			continue
+		}
+		out = append(out, d)
+	}
+	return out
+}
+
+// SearchIndex 返回客户端搜索索引，覆盖磁盘上全部 .md（与 Search 范围一致），
+// 使静态托管时无需后端也能全文搜索。
+func (s *Service) SearchIndex() []model.SearchDoc {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]model.SearchDoc, 0, len(s.cache))
+	for path, c := range s.cache {
+		out = append(out, model.SearchDoc{
+			Path:  path,
+			Title: c.resp.Title,
+			Text:  string(c.raw),
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
+	return out
+}
+
 func sortMenus(items []*model.MenuItem) {
 	sort.SliceStable(items, func(i, j int) bool {
 		if items[i].Order != items[j].Order {

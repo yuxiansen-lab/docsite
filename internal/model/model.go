@@ -66,3 +66,21 @@ type SearchHit struct {
 	Title   string `json:"title"`
 	Snippet string `json:"snippet"`
 }
+
+// DocsBundle 是 /api/docs.json 的载荷：一次性给出全部文档，
+// 供静态托管（GitHub Pages）时前端一次性载入。
+type DocsBundle struct {
+	Docs []DocResponse `json:"docs"`
+}
+
+// SearchDoc 是客户端搜索索引的一项。
+type SearchDoc struct {
+	Path  string `json:"path"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
+// SearchIndex 是 /api/search-index.json 的载荷。
+type SearchIndex struct {
+	Items []SearchDoc `json:"items"`
+}

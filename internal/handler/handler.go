@@ -32,6 +32,14 @@ func New() (http.Handler, error) {
 	mux.HandleFunc("/api/menu", h.handleMenu)
 	mux.HandleFunc("/api/doc", h.handleDoc)
 	mux.HandleFunc("/api/search", h.handleSearch)
+
+	// 与静态导出（dist/api/*.json）完全同路径、同内容，
+	// 使同一份前端在单二进制与静态托管下行为一致。
+	mux.HandleFunc("/api/config.json", h.handleConfig)
+	mux.HandleFunc("/api/menu.json", h.handleMenu)
+	mux.HandleFunc("/api/docs.json", h.handleDocsBundle)
+	mux.HandleFunc("/api/search-index.json", h.handleSearchIndex)
+
 	mux.Handle("/docs/assets/", h.assetsHandler())
 	mux.Handle("/", h.staticHandler())
 
@@ -63,6 +71,16 @@ func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleMenu(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, h.svc.Menu())
+}
+
+// handleDocsBundle 对应静态导出中的 api/docs.json。
+func (h *Handler) handleDocsBundle(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, model.DocsBundle{Docs: h.svc.AllDocs()})
+}
+
+// handleSearchIndex 对应静态导出中的 api/search-index.json。
+func (h *Handler) handleSearchIndex(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, model.SearchIndex{Items: h.svc.SearchIndex()})
 }
 
 func (h *Handler) handleDoc(w http.ResponseWriter, r *http.Request) {

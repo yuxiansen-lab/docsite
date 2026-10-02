@@ -212,3 +212,69 @@ func TestDocNotFound(t *testing.T) {
 		t.Error("expected error for missing document")
 	}
 }
+
+// TestSiteRelative 保证文档内绝对资源路径被改写为相对路径，
+// 否则部署在 GitHub Pages 子路径下图片会 404。
+func TestSiteRelative(t *testing.T) {
+	cases := map[string]string{
+		"/docs/assets/a.svg":        "docs/assets/a.svg",
+		"/docs/assets/sub/b.png":    "docs/assets/sub/b.png",
+		"docs/assets/a.svg":         "docs/assets/a.svg",
+		"https://example.com/a.png": "https://example.com/a.png",
+		"/other/x.png":              "/other/x.png",
+	}
+	for in, want := range cases {
+		if got := siteRelative(in); got != want {
+			t.Errorf("siteRelative(%q)=%q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestImageSrcIsRelative(t *testing.T) {
+	doc := renderMarkdown("![图](/docs/assets/architecture.svg)\n")
+	if !strings.Contains(doc.HTML, `src="docs/assets/architecture.svg"`) {
+		t.Errorf("image src not made relative: %s", doc.HTML)
+	}
+	if strings.Contains(doc.HTML, `src="/docs/assets/`) {
+		t.Errorf("image src still absolute: %s", doc.HTML)
+	}
+}
+
+// TestAllDocsAndSearchIndex 覆盖静态导出所依赖的两个聚合接口。
+func TestAllDocsAndSearchIndex(t *testing.T) {
+	s, err := New()
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
+
+	docs := s.AllDocs()
+	if len(docs) == 0 {
+		t.Fatal("AllDocs returned nothing")
+	}
+	// 菜单顺序：第一篇应为首页，且首篇没有上一篇
+	if docs[0].Path != "index.md" {
+		t.Errorf("first doc = %q, want index.md", docs[0].Path)
+	}
+	if docs[0].Prev != nil {
+		t.Error("first doc should not have a prev")
+	}
+	// 相邻文档应互为上/下篇
+	if len(docs) > 1 {
+		if docs[0].Next == nil || docs[0].Next.Path != docs[1].Path {
+			t.Errorf("docs[0].Next = %+v, want %q", docs[0].Next, docs[1].Path)
+		}
+		if docs[1].Prev == nil || docs[1].Prev.Path != docs[0].Path {
+			t.Errorf("docs[1].Prev = %+v, want %q", docs[1].Prev, docs[0].Path)
+		}
+	}
+
+	idx := s.SearchIndex()
+	if len(idx) == 0 {
+		t.Fatal("SearchIndex returned nothing")
+	}
+	for _, it := range idx {
+		if it.Path == "" || it.Title == "" || it.Text == "" {
+			t.Errorf("incomplete search entry: %+v", it)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 # 构建产物
 /docsite
 /docsite.exe
+/dist/
 *.exe
 *.exe~
 *.test
