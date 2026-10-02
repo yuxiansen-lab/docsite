@@ -42,6 +42,9 @@ button {
   background: none;
   border: none;
   cursor: pointer;
+  /* 浏览器默认给 button 加 text-align:center，会把弹性布局里的文字挤到中间，
+     这里改为继承，避免图标与文字被拉开 */
+  text-align: inherit;
 }
 
 ul[class],

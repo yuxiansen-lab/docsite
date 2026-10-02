@@ -59,6 +59,14 @@
     apply(next);
   }
 
+  // 绑定切换按钮：此前遗漏了这一步，导致点击没有任何反应
+  function bindToggle() {
+    const btn = document.getElementById("btnTheme");
+    if (!btn || btn.dataset.themeBound === "1") return;
+    btn.dataset.themeBound = "1";
+    btn.addEventListener("click", toggle);
+  }
+
   // 跟随系统变化（仅在 auto 模式）
   if (window.matchMedia) {
     window
@@ -68,8 +76,14 @@
       });
   }
 
-  window.Theme = { toggle, get, apply, resolve };
+  window.Theme = { toggle, get, apply, resolve, bind: bindToggle };
 
   // 立即应用，避免 FOUC
   apply(get());
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindToggle);
+  } else {
+    bindToggle();
+  }
 })();
