@@ -1,0 +1,77 @@
+{
+  "items": [
+    {
+      "id": "home",
+      "title": "首页",
+      "icon": "home",
+      "action": "doc",
+      "path": "index.md",
+      "order": 1
+    },
+    {
+      "id": "guide",
+      "title": "指南",
+      "icon": "book",
+      "action": "toggle",
+      "expanded": true,
+      "order": 2,
+      "children": [
+        {
+          "id": "guide-intro",
+          "title": "介绍",
+          "icon": "info",
+          "action": "doc",
+          "path": "guide/intro.md",
+          "order": 1
+        },
+        {
+          "id": "guide-install",
+          "title": "安装",
+          "icon": "download",
+          "action": "doc",
+          "path": "guide/install.md",
+          "order": 2
+        },
+        {
+          "id": "guide-config",
+          "title": "配置",
+          "icon": "settings",
+          "action": "doc",
+          "path": "guide/config.md",
+          "order": 3
+        },
+        {
+          "id": "guide-guide",
+          "title": "子指南",
+          "action": "toggle",
+          "order": 4,
+          "children": [
+            {
+              "id": "guide-guide-deep",
+              "title": "深度示例",
+              "action": "doc",
+              "path": "guide/deep.md",
+              "order": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "title": "API 参考",
+      "icon": "code",
+      "action": "doc",
+      "path": "api.md",
+      "order": 3
+    },
+    {
+      "id": "about",
+      "title": "关于",
+      "icon": "heart",
+      "action": "link",
+      "url": "https://example.com",
+      "order": 4
+    }
+  ]
+}

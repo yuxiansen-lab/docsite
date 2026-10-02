@@ -1,0 +1,18 @@
+# 构建产物
+/docsite
+/docsite.exe
+*.exe
+*.exe~
+*.test
+*.out
+
+# 依赖与缓存
+/vendor/
+.gocache/
+.chrome-profile/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
